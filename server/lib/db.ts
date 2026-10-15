@@ -2,6 +2,7 @@ import 'server-only';
 import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
+import { seed } from './seed';
 
 // One connection per process. Kept on globalThis so dev hot reloads reuse it.
 const globalForDb = globalThis as unknown as { db?: Database.Database };
@@ -18,6 +19,7 @@ function open() {
   conn.pragma('journal_mode = WAL');
   conn.pragma('foreign_keys = ON');
   conn.exec(SCHEMA);
+  seed(conn);
   return conn;
 }
 
