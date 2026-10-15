@@ -158,3 +158,10 @@ export function deleteQuestion(examId: string, questionId: string) {
 function touchExam(examId: string) {
   db().prepare('UPDATE exams SET updated_at = ? WHERE id = ?').run(now(), examId);
 }
+
+// Students only see published exams. Admins can open drafts to preview them.
+export function getVisibleExam(id: string, user: { role: string }): Exam {
+  const exam = getExam(id);
+  if (!exam.published && user.role !== 'admin') throw new HttpError(404, 'Exam not found.');
+  return exam;
+}
