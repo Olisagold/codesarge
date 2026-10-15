@@ -2,38 +2,40 @@
 
 import Link from 'next/link';
 import AuthGate from '@/components/AuthGate';
-import Badge from '@/components/Badge';
-import { getScores } from '@/lib/history';
-import { questions } from '@/lib/questions';
+import { card } from '@/components/ui';
+import { listExams } from '@/lib/exams';
+import { getGrades } from '@/lib/history';
 
 export default function QuizPage() {
   return (
     <AuthGate>
       {(session) => {
-        const scores = getScores(session.username);
+        const exams = listExams().filter((e) => e.published);
+        const grades = getGrades(session.username);
         return (
           <>
-            <h1 className="text-2xl font-semibold">Questions</h1>
-            <p className="mt-1 text-sm text-zinc-500">Pick a question, write your solution, and get it graded.</p>
-            <ul className="mt-6 divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white">
-              {questions.map((q) => (
-                <li key={q.id}>
-                  <Link href={`/quiz/${q.id}`} className="flex items-center justify-between gap-4 px-4 py-4 hover:bg-zinc-50">
-                    <div>
-                      <div className="font-medium">{q.title}</div>
-                      <div className="mt-1 flex gap-2">
-                        <Badge tone={q.difficulty}>{q.difficulty}</Badge>
-                        <Badge>{q.language}</Badge>
-                        {q.rubric && <Badge>rubric</Badge>}
-                      </div>
-                    </div>
-                    <span className="text-sm text-zinc-500">
-                      {scores[q.id] !== undefined ? `Best: ${Math.round(scores[q.id])}` : 'Not tried'}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <h1 className="text-2xl font-semibold">Exams</h1>
+            <p className="mt-1 text-sm text-zinc-500">Pick an exam, answer the questions, and get each one marked.</p>
+            {exams.length === 0 ? (
+              <p className="mt-6 text-sm text-zinc-500">No exams are published yet.</p>
+            ) : (
+              <ul className={`mt-6 divide-y divide-zinc-200 ${card}`}>
+                {exams.map((exam) => {
+                  const done = exam.questions.filter((q) => grades[q.id] !== undefined).length;
+                  return (
+                    <li key={exam.id}>
+                      <Link href={`/quiz/${exam.id}`} className="flex items-center justify-between gap-4 px-4 py-4 hover:bg-zinc-50">
+                        <div>
+                          <div className="font-medium">{exam.title}</div>
+                          {exam.description && <div className="mt-0.5 text-sm text-zinc-500">{exam.description}</div>}
+                        </div>
+                        <span className="shrink-0 text-sm text-zinc-500">{done} / {exam.questions.length} answered</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </>
         );
       }}
