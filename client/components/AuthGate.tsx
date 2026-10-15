@@ -3,17 +3,23 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { getSession, logout, type Session } from '@/lib/auth';
+import { getSession, logout, type Role, type Session } from '@/lib/auth';
 
-export default function AuthGate({ children }: { children: (session: Session) => React.ReactNode }) {
+type Props = {
+  role?: Role;
+  children: (session: Session) => React.ReactNode;
+};
+
+export default function AuthGate({ role, children }: Props) {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
     const s = getSession();
     if (!s) router.replace('/login');
+    else if (role && s.role !== role) router.replace(s.role === 'admin' ? '/admin' : '/quiz');
     else setSession(s);
-  }, [router]);
+  }, [router, role]);
 
   if (!session) return null;
 
@@ -21,11 +27,22 @@ export default function AuthGate({ children }: { children: (session: Session) =>
     <div className="min-h-screen">
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-          <Link href="/quiz" className="font-semibold">
-            Codesarge
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href={session.role === 'admin' ? '/admin' : '/quiz'} className="font-semibold">
+              Codesarge
+            </Link>
+            {session.role === 'admin' && (
+              <nav className="flex gap-3 text-sm text-zinc-600">
+                <Link href="/admin" className="hover:text-zinc-900">Exams</Link>
+                <Link href="/quiz" className="hover:text-zinc-900">Student view</Link>
+              </nav>
+            )}
+          </div>
           <div className="flex items-center gap-3 text-sm text-zinc-600">
-            <span>{session.username}</span>
+            <span>
+              {session.username}
+              {session.role === 'admin' && <span className="ml-1 text-xs text-zinc-400">(admin)</span>}
+            </span>
             <button
               onClick={() => {
                 logout();

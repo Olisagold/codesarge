@@ -47,17 +47,28 @@ export async function getResult(id: string): Promise<AssessmentResult> {
   if (out.status !== 'completed') throw new NotFinishedError(out.status);
   const { body } = mustGet(id);
 
-  // Rough fake score so different submissions look different.
+  // Rough fake grade on the API's 0 to 10 scale, so different submissions look different.
   const lines = body.submission.code.split('\n').filter((l) => l.trim()).length;
   const stub = /\bpass\b|^\s*$/m.test(body.submission.code) && lines < 4;
-  const score = stub ? 22 : Math.min(95, 55 + lines * 3);
+  const grade = stub ? 2 : Math.min(9.5, 5.5 + lines * 0.3);
+  const round = (n: number) => Math.round(n * 10) / 10;
+
+  const rubricScores = body.rubric
+    ? body.rubric.criteria.map((c, i) => ({
+        name: c.name,
+        weight: c.weight,
+        score: round(Math.max(0, Math.min(10, grade + (i % 2 ? 1 : -1) * 0.8))),
+        comment: stub ? 'Not attempted yet.' : `Mostly meets "${c.description}"`,
+      }))
+    : null;
 
   return {
     assessment_id: id,
     status: 'completed',
-    score,
+    // score and criteria rate the feedback itself, not the student's code.
+    score: 8.6,
     confidence: 0.82,
-    criteria: { correctness: score, readability: Math.min(100, score + 5), efficiency: Math.max(0, score - 10) },
+    criteria: { correctness: 8.8, relevance: 9.0, actionability: 8.4, specificity: 8.5, pedagogical_fit: 8.3 },
     feedback: {
       summary: stub
         ? 'The submission is still the starter code, so most requirements are not met.'
@@ -65,10 +76,8 @@ export async function getResult(id: string): Promise<AssessmentResult> {
       issues: stub ? ['Function body is empty.'] : ['Edge cases such as empty input are not handled.'],
       suggestions: ['Add a couple of quick tests for the edge cases in the requirements.'],
     },
-    rubric_score: body.rubric ? score : null,
-    rubric_scores: body.rubric
-      ? body.rubric.criteria.map((c) => ({ name: c.name, weight: c.weight, score, comment: 'Mock comment.' }))
-      : null,
+    rubric_score: rubricScores ? round(rubricScores.reduce((sum, r) => sum + r.score * r.weight, 0) / 100) : null,
+    rubric_scores: rubricScores,
     simulated: true,
   };
 }

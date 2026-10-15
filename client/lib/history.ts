@@ -1,10 +1,10 @@
 'use client';
 
-// Best score per question per user, kept in localStorage.
+// Best rubric grade (0 to 10) per question per user, kept in localStorage.
 
-const key = (username: string) => `codesarge.scores.${username}`;
+const key = (username: string) => `codesarge.grades.${username}`;
 
-export function getScores(username: string): Record<string, number> {
+export function getGrades(username: string): Record<string, number> {
   try {
     return JSON.parse(localStorage.getItem(key(username)) ?? '{}');
   } catch {
@@ -12,8 +12,8 @@ export function getScores(username: string): Record<string, number> {
   }
 }
 
-export function saveScore(username: string, questionId: string, score: number) {
-  const scores = getScores(username);
-  scores[questionId] = Math.max(scores[questionId] ?? 0, score);
-  localStorage.setItem(key(username), JSON.stringify(scores));
+export function saveGrade(username: string, questionId: string, grade: number) {
+  const grades = getGrades(username);
+  grades[questionId] = Math.max(grades[questionId] ?? 0, grade);
+  localStorage.setItem(key(username), JSON.stringify(grades));
 }

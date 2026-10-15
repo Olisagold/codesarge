@@ -12,7 +12,8 @@ export default function LoginPage() {
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (login(username, password)) router.replace('/quiz');
+    const session = login(username, password);
+    if (session) router.replace(session.role === 'admin' ? '/admin' : '/quiz');
     else setError('Wrong username or password.');
   }
 
@@ -45,7 +46,7 @@ export default function LoginPage() {
         <button className="mt-6 w-full rounded-md bg-zinc-900 py-2 font-medium text-white hover:bg-zinc-700">
           Sign in
         </button>
-        <p className="mt-4 text-center text-xs text-zinc-400">Demo login: demo / demo123</p>
+        <p className="mt-4 text-center text-xs text-zinc-400">Admin: admin / admin123 · Student: demo / demo123</p>
       </form>
     </div>
   );
